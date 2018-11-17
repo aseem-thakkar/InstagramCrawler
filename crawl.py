@@ -28,40 +28,56 @@ post={
 	"dateTimeStamp":""
 }
 
-count=0
+profile_links=[]
+
+global count
 
 
-
-while(count!=3):
-	try:
-		print(driver.current_url)
-		# dialog = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.vCf6V article")))
-		# dialog = WebDriverWait(driver, 4).until(EC.staleness_of((By.CSS_SELECTOR, "div.vCf6V article")))
-		# scraping data from within the article
-		dialog=driver.find_element_by_css_selector('div.vCf6V article')
-		print("dialog : "+str(dialog))
+def scrape_posts():
+	# print(profile_links)
+	c=0
+	for i in profile_links:
+		c=c+1
+		# print(c)
+		driver.get(i)
 		image=driver.find_element_by_css_selector('img.FFVAD')
 		post["imageURL"]=image.get_attribute("src")
 		try:
-			post["caption"]=image.get_attribute("alt")
+			temp=driver.find_element_by_css_selector("div.C4VMK span")
+			user_found=driver.find_element_by_css_selector("h2._6lAjh")
+			# print("comment by : " + user_found)
+			# if(user_found.text==user):
+			post["caption"]=temp.text
+			# post["caption"]=""
 		except Exception as e:
-			print("exception : "+e)
+			# print("exception : "+e)
 			post["caption"]=""
-		print("src = "+post["imageURL"]+"\n"+"caption = "+post["caption"])
+		post["comments"]=len(driver.find_elements_by_css_selector("h3._6lAjh"))
+		date=driver.find_element_by_css_selector("time.Nzb55").get_attribute("datetime")
+		date=date[::-1]
+		date=date[5:]
+		date=date[::-1]
+		date=date.replace("T","")
+		time=date[10:]
+		date=date[0:10]
+		print(date+"\t"+time)
+		print("\n\n"+str(c)+"\nimg url : "+post["imageURL"]+"\ncomments : "+str(post["comments"])+"\n"+"caption : "+post["caption"])
 
 
-		#done crawling 
-		next_button=driver.find_element_by_css_selector('a.coreSpriteRightPaginationArrow')
-		# next_button = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.coreSpriteRightPaginationArrow")))
-		next_button.click()
-		count=count+1
-		driver.implicitly_wait(2) # seconds
-	except Exception as e:
-		print("exception : "+str(e))
-		count=count - 1
-		print("done crawling till the end. count = "+str(count))
-		break
+def get_url():
+	while(True):
+		try:
+			profile_links.append(driver.current_url)
+			dialog = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.vCf6V article")))
+			next_button = WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.coreSpriteRightPaginationArrow")))
+			next_button.click()
+		except Exception as e:
+			# print("exception : "+str(e))
+			print("done crawling till the end. count = "+str(len(profile_links)))
+			break
+	# print("will export the scraped data")
+	# input()
+	scrape_posts()
+	# driver.close()
 
-
-print("will export the scraped data")
-# driver.close()
+get_url()
